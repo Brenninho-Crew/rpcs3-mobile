@@ -13,21 +13,23 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Android NDK
-        uses: nado1/setup-android-ndk@v1
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          ndk-version: r26b # Latest stable NDK
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Configure CMake
+      - name: Build with CMake
         run: |
           mkdir build
+          # O GitHub já define $ANDROID_NDK_LATEST_HOME nas imagens ubuntu-latest
           cmake -S . -B build \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-30 \
             -DCMAKE_BUILD_TYPE=Release \
-            -D_BUILD_LLVM=ON \
-            -DUSE_SDL=ON
-
-      - name: Compile
-        run: cmake --build build --parallel $(nproc)
+            -DBUILD_LLVM=ON \
+            -DUSE_SDL=ON \
+            -DANDROID=ON
+          
+          cmake --build build --parallel $(nproc)
