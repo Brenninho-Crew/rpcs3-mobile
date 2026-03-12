@@ -20,26 +20,42 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r27c
+          add-to-path: true
+
       - name: Configure CMake for Android
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           mkdir build
           cmake -S . -B build \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-30 \
             -DCMAKE_BUILD_TYPE=Release \
             -DUSE_SYSTEM_CURL=OFF \
             -DUSE_WOLFSSL=OFF \
+            -DCURL_USE_WOLFSSL=OFF \
+            -DCURL_USE_OPENSSL=OFF \
+            -DCURL_USE_MBEDTLS=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_WolfSSL=ON \
+            -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=ON \
             -DBUILD_LLVM=ON \
             -DUSE_SDL=ON \
             -DANDROID=ON
 
       - name: Compile (Parallel)
-        # Usando apenas 2 cores para evitar falta de RAM (Erro 137) ao compilar LLVM
         run: cmake --build build --parallel 2
 
       - name: Upload Binaries
         uses: actions/upload-artifact@v4
         with:
           name: rpcs3-android-binaries
-          path: build/bin/
+          path: |
+            build/bin/
+            build/lib/
+            build/**/*.so
